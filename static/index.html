@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Yerel GRK</title>
+<style>
+:root{--bg:#0b0b0f;--sidebar:#121215;--panel:#16161c;--text:#f4f4f5;--muted:#9a9aa8;--border:#2a2a32;--accent:#2b6e9e;--user:#1e4a6b;--ai:#1c1c24;--input:#141418;--ok:#065f46;--okt:#a7f3d0;--warn:#b45309;--warnt:#fde68a;--cloud:#1e40af;--cloudt:#bfdbfe;--fs:1.08rem}
+body.light-theme{--bg:#f2f2f5;--sidebar:#fff;--panel:#f0f0f3;--text:#1a1a1e;--muted:#5a5a62;--border:#dcdce0;--user:#2b6e9e;--ai:#e8e8ec;--input:#f7f7f9}
+body.dim-theme{--bg:#22272e;--sidebar:#1c2128;--panel:#2d333b;--text:#adbac7;--muted:#8b949e;--border:#373e47;--user:#1f4e7d;--ai:#2d333b;--input:#22272e}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui,sans-serif;font-size:var(--fs)}
+body{background:var(--bg);color:var(--text);height:100vh;display:flex;overflow:hidden}
+.sidebar{width:360px;background:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100vh;z-index:100;transition:transform .3s}
+.sidebar.collapsed{transform:translateX(-100%)}
+.sidebar-header{padding:14px 16px;display:flex;align-items:center;gap:10px}
+.logo{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#2b6e9e,#3b82f6);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#fff}
+#newChatBtn{margin:4px 16px 10px;padding:12px;background:var(--accent);border:none;border-radius:14px;color:#fff;font-weight:700;cursor:pointer;font-size:1.05rem}
+.model-label{margin:0 16px 4px;font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+#modelSelect{margin:0 16px 8px;width:calc(100% - 32px);font-size:1.05rem;font-weight:700;padding:12px 14px;border-radius:12px;background:var(--panel);border:1px solid var(--border);color:var(--text);cursor:pointer}
+#modelSelect:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px #2b6e9e44;min-height:48px}
+#modelSelect option,#modelSelect optgroup{font-size:1.05rem;padding:10px;font-weight:600}
+#roleSelect{margin:0 16px 8px;width:calc(100% - 32px);font-size:1rem;font-weight:600;padding:10px 12px;border-radius:11px;background:var(--panel);border:1px solid var(--border);color:var(--text)}
+#downloadChatBtn{margin:0 16px 10px;padding:10px;background:#2e7d5e;border:none;border-radius:12px;color:#fff;font-weight:700;cursor:pointer}
+.history-list{flex:1;overflow-y:auto;padding:4px 10px 14px}
+.hist-item{padding:11px 12px;margin:5px 0;background:var(--panel);border:1px solid transparent;border-radius:12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:1rem}
+.hist-item.active{background:#1a3a52;border-color:var(--accent)}
+.hist-item.pending .title::after{content:' '; }
+.hist-item .hourglass{display:inline-block;animation:spin 1.2s linear infinite;margin-right:4px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes histBlink{0%,100%{box-shadow:none}50%{box-shadow:0 0 0 2px #34c77a88;background:#1c3d2a}}
+.hist-item.blink-done{animation:histBlink .7s ease 3}
+.hist-item .title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;font-size:1rem}
+.hist-item .del{background:none;border:none;color:#ff8888;cursor:pointer;font-size:1.1rem}
+.tag{font-size:.72rem;padding:3px 8px;border-radius:8px;font-weight:700;flex-shrink:0}
+.tag-yerel{background:var(--ok);color:var(--okt)}.tag-bulut{background:var(--cloud);color:var(--cloudt)}.tag-skill{background:var(--warn);color:var(--warnt)}.tag-route{background:#4a3a16;color:#f0d78c}
+#main{flex:1;display:flex;flex-direction:column;height:100vh;min-width:0}
+#topbar{padding:12px 18px;background:var(--sidebar);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+#sidebarToggle{background:var(--panel);border:1px solid var(--border);color:var(--text);width:38px;height:38px;border-radius:10px;cursor:pointer;font-size:1.1rem}
+#chatTitle{font-size:1.1rem;font-weight:650}
+#currentModelBadge{font-size:.85rem;padding:5px 12px;border-radius:16px;font-weight:700;background:var(--ok);color:var(--okt)}
+#statusBar{display:flex;gap:6px;flex-wrap:wrap}
+.pill{font-size:.78rem;padding:5px 11px;border-radius:16px;font-weight:700}
+.pill.ok{background:#12352c;color:var(--okt)}.pill.down{background:#3a2222;color:#ffb4a2}
+.right-tools{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+#themeToggle,#shutdownBtn{border:none;border-radius:18px;padding:7px 13px;cursor:pointer;font-weight:700;font-size:.9rem}
+#themeToggle{background:#5a4a2e;color:#fff}#shutdownBtn{background:#c0392b;color:#fff}
+#chatBox{flex:1;overflow-y:auto;padding:22px 26px;display:flex;flex-direction:column;gap:14px}
+.msg-wrapper{max-width:80%;display:flex;flex-direction:column}
+.msg-wrapper.user{align-self:flex-end;align-items:flex-end}.msg-wrapper.assistant{align-self:flex-start}.msg-wrapper.system{align-self:center;max-width:92%}
+.badge{font-size:.8rem;padding:4px 10px;border-radius:7px;margin-bottom:5px;font-weight:700;width:fit-content}
+.badge-yerel{background:var(--ok);color:var(--okt)}.badge-bulut{background:var(--cloud);color:var(--cloudt)}.badge-skill{background:var(--warn);color:var(--warnt)}.badge-route{background:#4a3a16;color:#f0d78c}
+.msg{padding:14px 17px;border-radius:15px;white-space:pre-wrap;word-wrap:break-word;line-height:1.5;font-size:1.05rem;border:1px solid transparent}
+.user .msg{background:var(--user)}.assistant .msg{background:var(--ai);border-color:var(--border)}
+.system .msg{background:var(--panel);border:1px solid var(--border);color:var(--muted);text-align:center;padding:18px;font-size:1rem}
+.msg-actions{display:flex;gap:6px;margin-top:6px;justify-content:flex-end}
+.msg-action-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:var(--text);border-radius:5px;padding:3px 9px;font-size:.8rem;cursor:pointer}
+.blink{animation:blink 1s infinite}@keyframes blink{50%{opacity:.35}}
+#inputArea{padding:12px 16px 14px;background:var(--sidebar);border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px}
+.tools-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.tool-btn{background:var(--panel);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:10px;font-size:.88rem;font-weight:650;cursor:pointer}
+.tool-btn.green{background:#1e3a2e;border-color:#2e7d5e}.tool-btn.stop{background:#ef4444;color:#fff;border:none}
+.input-row{display:flex;gap:10px;align-items:flex-end}
+#prompt{flex:1;min-height:150px;max-height:280px;padding:14px 16px;border-radius:15px;background:var(--input);border:1px solid var(--border);color:var(--text);font-size:1.08rem;font-style:italic;resize:vertical;line-height:1.45}
+#prompt:focus{outline:none;border-color:var(--accent)}
+#sendBtn{height:48px;min-width:100px;padding:0 20px;background:var(--accent);border:none;border-radius:13px;color:#fff;font-weight:700;cursor:pointer;font-size:1.05rem}
+#sendBtn:disabled{opacity:.5;cursor:not-allowed}
+#imagePreview{display:none;gap:8px;flex-wrap:wrap}
+.preview-item{position:relative}.preview-item img{height:54px;border-radius:8px}
+.remove-img{position:absolute;top:-6px;right:-6px;background:#8b5a2b;border-radius:50%;width:18px;height:18px;font-size:11px;line-height:18px;text-align:center;cursor:pointer;color:#fff}
+@media(max-width:700px){.sidebar{position:fixed}.msg-wrapper{max-width:94%}}
+</style>
+</head>
+<body>
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header"><div class="logo">GR</div><div><strong style="font-size:1.15rem">AI Yerel GRK</strong><br><small style="color:var(--muted);font-size:.85rem">GB/IST surum</small></div></div>
+  <button id="newChatBtn">+ Yeni Sohbet</button>
+  <div class="model-label">Model (genis liste)</div>
+  <select id="modelSelect" size="1"></select>
+  <div class="model-label">Rol</div>
+  <select id="roleSelect"><option value="default">Genel</option><option value="coder">Yazilim Mimari</option><option value="writer">Teknik Yazar</option><option value="analyst">Veri Analisti</option></select>
+  <button id="downloadChatBtn">Sohbeti Indir (.txt)</button>
+  <div id="history-list" class="history-list"></div>
+</div>
+<div id="main">
+  <div id="topbar">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <button id="sidebarToggle">â˜°</button>
+      <span id="chatTitle">Sohbet</span>
+      <span id="currentModelBadge">â€”</span>
+    </div>
+    <div class="right-tools">
+      <div id="statusBar"></div>
+      <button id="themeToggle">Tema</button>
+      <button id="shutdownBtn">Cikis</button>
+    </div>
+  </div>
+  <div id="chatBox"></div>
+  <div id="inputArea">
+    <div class="tools-row">
+      <button class="tool-btn" id="selectImageBtn">Gorsel</button>
+      <button class="tool-btn green" id="excelBtn">Excel</button>
+      <button class="tool-btn" id="pdfBtn">PDF</button>
+      <button class="tool-btn" id="txtBtn">TXT</button>
+      <button class="tool-btn" id="codeBtn">Kod Gonder</button>
+      <button class="tool-btn stop" id="stopBtn" style="display:none">Durdur</button>
+      <input type="file" id="imageInput" accept="image/*" multiple style="display:none">
+      <input type="file" id="pdfInput" accept=".pdf" style="display:none">
+      <input type="file" id="txtInput" accept=".txt" style="display:none">
+      <input type="file" id="codeInput" accept=".py,.js,.ts,.jsx,.tsx,.java,.c,.cpp,.h,.cs,.go,.rs,.php,.rb,.sql,.json,.html,.css,.sh,.ps1,.md" style="display:none">
+    </div>
+    <div id="imagePreview"></div>
+    <div class="input-row">
+      <textarea id="prompt" placeholder="Mesaj yaz... (Ctrl+V gorsel)"></textarea>
+      <button id="sendBtn">Gonder</button>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+'use strict';
+let conversations={}, currentId=null, nextId=1, pending=false, currentImages=[], abortCtrl=null, themeMode=0, sidebarOpen=true;
+const chatBox=document.getElementById('chatBox'), promptEl=document.getElementById('prompt'), sendBtn=document.getElementById('sendBtn');
+const modelSelect=document.getElementById('modelSelect'), roleSelect=document.getElementById('roleSelect');
+const historyList=document.getElementById('history-list'), newChatBtn=document.getElementById('newChatBtn');
+const chatTitle=document.getElementById('chatTitle'), statusBar=document.getElementById('statusBar');
+const imagePreview=document.getElementById('imagePreview'), stopBtn=document.getElementById('stopBtn');
+const sidebar=document.getElementById('sidebar'), badgeEl=document.getElementById('currentModelBadge');
+
+function kind(m){ if(!m)return 'yerel'; if((m+'').startsWith('skill:'))return 'skill'; if((m+'').includes('gemini'))return 'bulut'; return 'yerel'; }
+function tagCls(k){ return k==='bulut'?'tag-bulut':(k==='skill'?'tag-skill':'tag-yerel'); }
+function badgeCls(k){ return k==='bulut'?'badge-bulut':(k==='skill'?'badge-skill':'badge-yerel'); }
+function shortModel(m){ if(!m)return 'â€”'; if(m==='auto')return 'auto'; if(m.startsWith('skill:'))return m.slice(6); return m; }
+
+function updateTopBadge(conv){
+  if(!conv){ badgeEl.textContent='â€”'; return; }
+  let t = shortModel(conv.model);
+  if(conv.lastRoute) t += ' Â· ' + conv.lastRoute;
+  if(conv.lastUsedModel && conv.lastUsedModel !== conv.model) t = shortModel(conv.lastUsedModel) + (conv.lastRoute?' Â· '+conv.lastRoute:'');
+  badgeEl.textContent = t;
+  const k = kind(conv.lastUsedModel || conv.model);
+  badgeEl.className = '';
+  badgeEl.style.background = k==='bulut'?'#1e40af':(k==='skill'?'#b45309':'#065f46');
+  badgeEl.style.color = k==='bulut'?'#bfdbfe':(k==='skill'?'#fde68a':'#a7f3d0');
+}
+
+async function updateStatus(){
+  try{
+    const d=await(await fetch('/status')).json();
+    statusBar.innerHTML='';
+    [['Ollama',d.ollama],['GPU',d.gpu],['Gemini',d.gemini]].forEach(([n,ok])=>{
+      const s=document.createElement('span'); s.className='pill '+(ok?'ok':'down'); s.textContent=n; statusBar.appendChild(s);
+    });
+  }catch{ statusBar.innerHTML='<span class="pill down">Baglanti yok</span>'; }
+}
+updateStatus(); setInterval(updateStatus,10000);
+
+async function loadModels(){
+  try{
+    const d=await(await fetch('/models')).json(); modelSelect.innerHTML='';
+    const add=(lab,arr,icon)=>{ if(!arr||!arr.length)return; const g=document.createElement('optgroup'); g.label=icon+' '+lab;
+      arr.forEach(m=>{ const o=document.createElement('option'); const v=typeof m==='string'?m:m.key; o.value=v;
+        o.textContent=(typeof m==='string'?m:(m.name||m.key)); g.appendChild(o); }); modelSelect.appendChild(g); };
+    add('Yerel', d.local||[], 'ðŸ–¥ï¸'); add('Bulut', d.cloud||[], 'â˜ï¸'); add('Skill', d.skills||[], 'ðŸ› ï¸');
+    if(!modelSelect.options.length) modelSelect.innerHTML='<option value="auto">auto</option>';
+  }catch{ modelSelect.innerHTML='<option value="auto">auto</option>'; }
+}
+
+function save(){
+  localStorage.setItem('grk_convs',JSON.stringify(conversations));
+  localStorage.setItem('grk_current',currentId); localStorage.setItem('grk_next',nextId);
+  fetch('/save-conversations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({conversations,currentConvId:currentId,nextId})}).catch(()=>{});
+}
+async function load(){
+  try{ conversations=JSON.parse(localStorage.getItem('grk_convs')||'{}'); currentId=localStorage.getItem('grk_current'); nextId=parseInt(localStorage.getItem('grk_next')||'1'); }catch{conversations={};}
+  if(!currentId||!conversations[currentId]){
+    try{ const d=await(await fetch('/load-conversations')).json(); if(d.found&&d.data&&d.data.conversations){ conversations=d.data.conversations; currentId=d.data.currentConvId; nextId=d.data.nextId||1; } }catch{}
+  }
+  if(!currentId||!conversations[currentId]) createNewChat(); else { renderHistory(); renderChat(); updateTopBadge(conversations[currentId]); }
+}
+
+function welcome(){ return '<strong>Hos geldin</strong>Model auto iken web/fiyat/kur istekleri Gemini web-ajana gidebilir. Sol listede en yeni usttedir.'; }
+
+function createNewChat(){
+  const model=modelSelect.value||'auto';
+  const id=String(nextId++);
+  conversations[id]={title:'Yeni Sohbet',model,created:Date.now(),messages:[{role:'system',content:'WELCOME'}],pending:false};
+  currentId=id; save(); renderHistory(); renderChat(); updateTopBadge(conversations[id]);
+}
+
+function deleteChat(id){
+  if(!confirm('Silinsin mi?')) return;
+  delete conversations[id];
+  if(currentId===id){ const ids=Object.keys(conversations); currentId=ids[0]||null; }
+  save(); if(!currentId) createNewChat(); else { renderHistory(); renderChat(); updateTopBadge(conversations[currentId]); }
+}
+
+function renderHistory(){
+  historyList.innerHTML='';
+  const ids=Object.keys(conversations).sort((a,b)=>{
+    const ca=conversations[a].created||0, cb=conversations[b].created||0;
+    if(cb!==ca) return cb-ca;
+    return parseInt(b)-parseInt(a);
+  });
+  ids.forEach(id=>{
+    const c=conversations[id];
+    const div=document.createElement('div');
+    div.className='hist-item'+(id===currentId?' active':'')+(c.pending?' pending':'')+(c.blink?' blink-done':'');
+    const t=document.createElement('span'); t.className='title';
+    t.innerHTML=(c.pending?'<span class="hourglass">â³</span>':'')+(c.title||c.model);
+    const tag=document.createElement('span');
+    const route=c.lastRoute;
+    if(route){ tag.className='tag tag-route'; tag.textContent=route; }
+    else { tag.className='tag '+tagCls(kind(c.lastUsedModel||c.model)); tag.textContent=kind(c.lastUsedModel||c.model); }
+    const del=document.createElement('button'); del.className='del'; del.textContent='x'; del.onclick=e=>{ e.stopPropagation(); deleteChat(id); };
+    div.appendChild(t); div.appendChild(tag); div.appendChild(del);
+    div.onclick=()=>{ currentId=id; if(conversations[id]) conversations[id].blink=false; save(); renderHistory(); renderChat(); updateTopBadge(conversations[id]); };
+    historyList.appendChild(div);
+  });
+}
+
+function attachMini(wrap, text){
+  const row=document.createElement('div'); row.className='msg-actions';
+  const c=document.createElement('button'); c.className='msg-action-btn'; c.textContent='Kopyala'; c.onclick=()=>navigator.clipboard.writeText(text);
+  const d=document.createElement('button'); d.className='msg-action-btn'; d.textContent='Indir';
+  d.onclick=()=>{ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([text],{type:'text/plain'})); a.download='yanit.txt'; a.click(); };
+  row.appendChild(c); row.appendChild(d); wrap.appendChild(row);
+}
+
+function renderChat(){
+  const conv=conversations[currentId]; if(!conv) return;
+  chatBox.innerHTML=''; chatTitle.textContent=conv.title||'Sohbet'; updateTopBadge(conv);
+  (conv.messages||[]).forEach(m=>{
+    const wrap=document.createElement('div'); wrap.className='msg-wrapper '+(m.role||'assistant');
+    if(m.role==='assistant'){
+      const b=document.createElement('div');
+      let label=m.model||conv.model;
+      if(m.route) label += ' Â· '+m.route;
+      b.className='badge '+(m.route?'badge-route':badgeCls(kind(m.model||conv.model)));
+      b.textContent=label; wrap.appendChild(b);
+    }
+    const msg=document.createElement('div'); msg.className='msg';
+    if(m.role==='system'&&m.content==='WELCOME') msg.innerHTML=welcome(); else msg.textContent=m.content;
+    wrap.appendChild(msg);
+    if(m.role==='assistant'&&m.content) attachMini(wrap,m.content);
+    chatBox.appendChild(wrap);
+  });
+  chatBox.scrollTop=chatBox.scrollHeight;
+}
+
+function toBase64(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result.split(',')[1]); r.onerror=rej; r.readAsDataURL(file); }); }
+
+document.getElementById('selectImageBtn').onclick=()=>document.getElementById('imageInput').click();
+document.getElementById('imageInput').onchange=async e=>{
+  for(const f of Array.from(e.target.files||[])){
+    const b64=await toBase64(f); currentImages.push(b64);
+    const div=document.createElement('div'); div.className='preview-item';
+    const img=document.createElement('img'); img.src=URL.createObjectURL(f);
+    const rm=document.createElement('span'); rm.className='remove-img'; rm.textContent='x';
+    rm.onclick=()=>{ const i=currentImages.indexOf(b64); if(i>=0)currentImages.splice(i,1); div.remove(); if(!currentImages.length)imagePreview.style.display='none'; };
+    div.appendChild(img); div.appendChild(rm); imagePreview.appendChild(div);
+  }
+  imagePreview.style.display=currentImages.length?'flex':'none'; e.target.value='';
+};
+promptEl.addEventListener('paste', async e=>{
+  const items=e.clipboardData&&e.clipboardData.items; if(!items)return;
+  for(const it of items){ if(it.type.startsWith('image/')){ e.preventDefault(); const f=it.getAsFile(); if(!f)continue;
+    const b64=await toBase64(f); currentImages.push(b64);
+    const div=document.createElement('div'); div.className='preview-item';
+    const img=document.createElement('img'); img.src=URL.createObjectURL(f);
+    const rm=document.createElement('span'); rm.className='remove-img'; rm.textContent='x';
+    rm.onclick=()=>{ const i=currentImages.indexOf(b64); if(i>=0)currentImages.splice(i,1); div.remove(); };
+    div.appendChild(img); div.appendChild(rm); imagePreview.appendChild(div); imagePreview.style.display='flex';
+  }}
+});
+
+document.getElementById('excelBtn').onclick=async ()=>{
+  if(!currentImages.length){ alert('Once gorsel'); return; }
+  try{
+    const res=await fetch('/image-to-excel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:conversations[currentId]?.model||'moondream:latest',image:currentImages[0]})});
+    if(!res.ok) throw new Error((await res.json().catch(()=>({}))).error||res.status);
+    const a=document.createElement('a'); a.href=URL.createObjectURL(await res.blob()); a.download='tablo.xlsx'; a.click();
+  }catch(e){ alert('Excel: '+e.message); }
+};
+document.getElementById('pdfBtn').onclick=()=>document.getElementById('pdfInput').click();
+document.getElementById('pdfInput').onchange=async e=>{
+  const f=e.target.files[0]; if(!f)return;
+  try{ const fd=new FormData(); fd.append('file',f); const d=await(await fetch('/upload-pdf',{method:'POST',body:fd})).json();
+    if(d.text) promptEl.value=(promptEl.value?promptEl.value+'\n\n':'')+'[PDF '+d.pages+' sayfa]\n'+d.text.slice(0,8000);
+  }catch(err){ alert(err.message); } e.target.value='';
+};
+document.getElementById('txtBtn').onclick=()=>document.getElementById('txtInput').click();
+document.getElementById('txtInput').onchange=e=>{ const f=e.target.files[0]; if(!f)return; const r=new FileReader(); r.onload=()=>{ promptEl.value=(promptEl.value?promptEl.value+'\n\n':'')+r.result; }; r.readAsText(f,'UTF-8'); e.target.value=''; };
+document.getElementById('codeBtn').onclick=()=>document.getElementById('codeInput').click();
+document.getElementById('codeInput').onchange=e=>{
+  const f=e.target.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{ promptEl.value=(promptEl.value?promptEl.value+'\n\n':'')+'```\n// Dosya: '+f.name+'\n'+r.result+'\n```\n\nBu kodu incele:'; };
+  r.readAsText(f,'UTF-8'); e.target.value='';
+};
+
+document.getElementById('downloadChatBtn').onclick=()=>{
+  const conv=conversations[currentId]; if(!conv)return;
+  const lines=(conv.messages||[]).filter(m=>!(m.role==='system'&&m.content==='WELCOME')).map(m=>(m.role||'')+': '+(m.content||''));
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([lines.join('\n\n')],{type:'text/plain'})); a.download=(conv.title||'sohbet')+'.txt'; a.click();
+};
+document.getElementById('themeToggle').onclick=()=>{
+  themeMode=(themeMode+1)%3; document.body.classList.remove('light-theme','dim-theme');
+  if(themeMode===1)document.body.classList.add('light-theme'); if(themeMode===2)document.body.classList.add('dim-theme');
+  localStorage.setItem('grk_theme',themeMode);
+};
+themeMode=parseInt(localStorage.getItem('grk_theme')||'0'); if(themeMode===1)document.body.classList.add('light-theme'); if(themeMode===2)document.body.classList.add('dim-theme');
+document.getElementById('shutdownBtn').onclick=async ()=>{
+  if(!confirm('Kapatilsin mi?'))return; try{ await fetch('/shutdown',{method:'POST'}); }catch{}
+  document.body.innerHTML='<p style="padding:40px;text-align:center;font-size:1.2rem">Kapatildi.</p>';
+};
+document.getElementById('sidebarToggle').onclick=()=>{ sidebarOpen=!sidebarOpen; sidebar.classList.toggle('collapsed',!sidebarOpen); };
+document.getElementById('stopBtn').onclick=()=>{ if(abortCtrl) abortCtrl.abort(); };
+
+async function sendMessage(){
+  const conv=conversations[currentId]; if(!conv||pending) return;
+  const text=promptEl.value.trim(); if(!text&&!currentImages.length) return;
+  conv.messages=(conv.messages||[]).filter(m=>!(m.role==='system'&&m.content==='WELCOME'));
+  const imgs=currentImages.slice();
+  let userMsg=text||('Gorsel hakkinda yorum');
+  conv.messages.push({role:'user',content:userMsg+(imgs.length?' ['+imgs.length+' gorsel]':'')});
+  if(conv.messages.filter(m=>m.role==='user').length===1) conv.title=userMsg.length>28?userMsg.slice(0,28)+'...':userMsg;
+  if(!conv.created) conv.created=Date.now();
+  promptEl.value=''; currentImages=[]; imagePreview.innerHTML=''; imagePreview.style.display='none';
+  pending=true; conv.pending=true; sendBtn.disabled=true; stopBtn.style.display='inline-block'; sendBtn.textContent='...';
+  save(); renderChat(); renderHistory();
+  const history=conv.messages.filter(m=>m.role==='user'||m.role==='assistant').slice(0,-1).slice(-20).map(m=>({role:m.role,content:m.content}));
+  abortCtrl=new AbortController();
+  try{
+    const hasImg=imgs.length>0;
+    const res=await fetch(hasImg?'/chat-multi-image':'/chat',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({prompt:userMsg,model:conv.model,history,images:hasImg?imgs:undefined,role:roleSelect.value||'default'}), signal:abortCtrl.signal});
+    if(!res.ok||!res.body) throw new Error('Sunucu');
+    const reader=res.body.getReader(); const dec=new TextDecoder(); let buf='', acc='', used=conv.model, route=null;
+    const wrap=document.createElement('div'); wrap.className='msg-wrapper assistant';
+    const badge=document.createElement('div'); badge.className='badge '+badgeCls(kind(used)); badge.textContent=used; wrap.appendChild(badge);
+    const msgDiv=document.createElement('div'); msgDiv.className='msg'; msgDiv.innerHTML='<span class="blink">...</span>'; wrap.appendChild(msgDiv); chatBox.appendChild(wrap);
+    while(true){
+      const {done,value}=await reader.read(); if(done) break;
+      buf+=dec.decode(value,{stream:true}); const lines=buf.split('\n'); buf=lines.pop();
+      for(const line of lines){ if(!line.trim()) continue; let evt; try{evt=JSON.parse(line);}catch{continue;}
+        if(evt.type==='meta'){ used=evt.model||used; route=evt.route||null; badge.textContent=used+(route?' Â· '+route:''); badge.className='badge '+(route?'badge-route':badgeCls(kind(used))); }
+        else if(evt.type==='chunk'){ acc+=evt.text; msgDiv.textContent=acc; chatBox.scrollTop=chatBox.scrollHeight; }
+        else if(evt.type==='error'){ acc+='\n[Hata] '+evt.message; msgDiv.textContent=acc; }
+      }
+    }
+    conv.messages.push({role:'assistant',content:acc,model:used,route:route});
+    conv.lastUsedModel=used; conv.lastRoute=route||null; conv.blink=true;
+    save(); renderHistory(); renderChat();
+    setTimeout(()=>{ if(conversations[currentId]){ conversations[currentId].blink=false; renderHistory(); } }, 2500);
+  }catch(e){
+    if(e.name!=='AbortError') conv.messages.push({role:'assistant',content:'Hata: '+e.message});
+    else conv.messages.push({role:'system',content:'Uretim durduruldu.'});
+    save(); renderChat();
+  }finally{ pending=false; conv.pending=false; sendBtn.disabled=false; stopBtn.style.display='none'; sendBtn.textContent='Gonder'; abortCtrl=null; renderHistory(); }
+}
+
+sendBtn.onclick=sendMessage;
+promptEl.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); sendMessage(); }});
+newChatBtn.onclick=createNewChat;
+modelSelect.onchange=()=>{ if(conversations[currentId]){ conversations[currentId].model=modelSelect.value; updateTopBadge(conversations[currentId]); save(); } };
+modelSelect.addEventListener('focus',()=>{ try{ modelSelect.size=Math.min(12, modelSelect.options.length+3); }catch{} });
+modelSelect.addEventListener('blur',()=>{ modelSelect.size=1; });
+(async()=>{ await loadModels(); await load(); })();
+})();
+</script>
+</body>
+</html>

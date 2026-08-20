@@ -1,0 +1,111 @@
+GK YEREL AI - GELİŞTİRİLMİŞ YAZILIMSAL GEREKSİNİMLER VE ÖZELLİKLER CHECKLIST'İ
+====================================================================================
+
+1. Donanım, Ortam ve Çevresel Yapılandırma Gereksinimleri
+* Sistem mimarisi Dell 16250 Plus dizüstü bilgisayar donanım profilini baz alır[cite: 1].
+* İşlemci altyapısı olarak Intel Core Ultra 9 288V (3.30 GHz) hedeflenmiştir[cite: 1].
+* Bellek kapasitesi olarak 32 GB (8533 MT/sn) RAM yönetimi gözetilmiştir[cite: 1].
+* Ekran kartı katmanında Intel Arc 140V GPU (16 GB Paylaşımlı) desteği bulunur[cite: 1].
+* Depolama birimi olarak 1.86 TB SSD alanı temel alınmıştır[cite: 1].
+* Çalışma dizini tespiti os.path.dirname(os.path.abspath(__file__)) ile dinamik olarak yapılır[cite: 1].
+* Çevresel değişkenler .env dosyasından load_dotenv yardımıyla yüklenir[cite: 1].
+* Intel Arc grafik işlemcisinin Ollama süreçlerinde aktif kullanılabilmesi için OLLAMA_IGPU_ENABLE = '1' ortam değişkeni tanımlanmıştır[cite: 1].
+* Çapraz kaynak istekleri (CORS) Flask-CORS ile yapılandırılmış ve expose_headers=['X-Saved-Filename'] eklenmiştir[cite: 1].
+* Çalışma anında excels/ klasörünün varlığı otomatik olarak denetlenir ve oluşturulur[cite: 1].
+* Çalışma anında uploads/ klasörünün varlığı otomatik olarak denetlenir ve oluşturulur[cite: 1].
+* Çalışma anında static/charts/ klasörünün varlığı otomatik olarak denetlenir ve oluşturulur[cite: 1].
+* Ollama servis durumu periyodik olarak kontrol edilir (is_ollama_running)[cite: 1].
+* Servis kapalıysa start_ollama fonksiyonu ile otomatik olarak başlatılır[cite: 1].
+* Windows ortamında arka plan süreci oluştururken subprocess.CREATE_NO_WINDOW bayrağı kullanılır[cite: 1].
+* Uygulama sonlandırılırken (atexit) arka plandaki Ollama süreçleri stop_ollama ile güvenle kapatılır[cite: 1].
+
+2. Backend (Flask) ve Sunucu Mimarisi Gereksinimleri
+* Flask çatı yazılımı app = Flask(__name__, static_folder='static') ile başlatılır[cite: 1].
+* Kök dizin / için index.html dosyasını sunan route tanımlıdır[cite: 1].
+* Metin tabanlı sohbetler için POST isteklerini kabul eden /chat rotası bulunur[cite: 1].
+* Çoklu görsel içeren istekler için /chat-multi-image rotası yer alır[cite: 1].
+* Görselleri Excel tablosuna dönüştüren /image-to-excel rotası aktiftir[cite: 1].
+* Ollama ve Gemini bağlantı durumlarını döndüren /status rotası bulunur[cite: 1].
+* Yerel, bulut, araştırma ve skill modellerini listeleyen /models rotası tanımlıdır[cite: 1].
+* Sohbet durumlarını eşitlemek için /save-conversations rotası yer alır[cite: 1].
+* NDJSON akış protokolü kullanılarak stream_chat_response üzerinden parça parça veri aktarımı sağlanır[cite: 1].
+
+3. Model ve Akıllı Yönlendirme Yönetimi Gereksinimleri
+* MODEL_CTX sözlüğü ile yerel modellerin token bağlam sınırları (context window) tanımlanmıştır[cite: 1].
+* qwen2.5:7b modeli için 8192 bağlam sınırı belirlenmiştir[cite: 1].
+* qwen2.5-coder:7b modeli için 12288 bağlam sınırı belirlenmiştir[cite: 1].
+* gemma4:latest modeli için 8192 bağlam sınırı belirlenmiştir[cite: 1].
+* deepseek-r1:7b modeli için 4096 bağlam sınırı belirlenmiştir[cite: 1].
+* moondream:latest modeli için 2048 bağlam sınırı belirlenmiştir[cite: 1].
+* Dinamik bağlam hesaplaması get_num_ctx() fonksiyonu ile gerçekleştirilir[cite: 1].
+* Master sistem istemi doğrudan C:\AI_YEREL\AI_YEREL_GPT\config\prompts.json dosyasından okunur[cite: 1].
+* Kod tetikleyici anahtar kelimeler (python, kod, script, vb.) tanımlanmıştır[cite: 1].
+* Mantıksal çıkarım anahtar kelimeler (neden, kanıtla, vb.) tanımlanmıştır[cite: 1].
+* Web arama tetikleyici anahtar kelimeler (güncel, araştır, https://, vb.) tanımlanmıştır[cite: 1].
+* resolve_auto_model() fonksiyonu ile görsel veya web isteklerine göre otomatik model seçimi yapılır[cite: 1].
+* Bulut tabanlı Gemini istemcisi (gemini-2.5-flash) sisteme entegre edilmiştir[cite: 1].
+* Google Search kancası (google_search) ile canlı web aramaları desteklenir[cite: 1].
+
+4. Otonom Araçlar ve Veri İşleme Gereksinimleri
+* Matplotlib grafik motoru arayüz bağımsız çalışması için matplotlib.use('Agg') ile yapılandırılmıştır[cite: 1].
+* execute_chart_code fonksiyonu model yanıtındaki Python kod bloklarını tespit eder[cite: 1].
+* Tespit edilen grafik kodları çalıştırılarak static/charts/ altına .png formatında kaydedilir[cite: 1].
+* /image-to-excel servisi moondream modeli yardımıyla görseldeki tablo verilerini metne dönüştürür[cite: 1].
+* Dönüştürülen veriler openpyxl kütüphanesi (Workbook) kullanılarak gerçek bir .xlsx dosyasına aktarılır[cite: 1].
+* PDF dosya içeriklerini okuyup işleme yeteneği bulunur[cite: 1].
+* TXT dosya içeriklerini doğrudan metin alanına paketleme yeteneği aktif olarak çalışır[cite: 1, 2].
+
+5. Frontend ve Tasarım Disiplini Gereksinimleri
+* HTML5 standartlarına uygun olarak Türkçe dil desteğiyle (lang="tr") çalışır[cite: 2].
+* Mobil uyumluluk için viewport meta etiketi yapılandırılmıştır[cite: 2].
+* Markdown ayrıştırması için harici marked.min.js kütüphanesi entegre edilmiştir[cite: 2].
+* Koyu tema (Dark Theme) varsayılan CSS değişkenleriyle desteklenir[cite: 2].
+* Aydınlık tema (Light Theme) body.light-theme sınıfı üzerinden uygulanır[cite: 2].
+* Loş tema (Dim Theme) body.dim-theme sınıfı üzerinden uygulanır[cite: 2].
+* Sol menü paneli (#sidebar) 300px sabit genişliğe ve esnek kaydırma özelliğine sahiptir[cite: 2].
+* Sol menünün kapanmasını sağlayan .sidebar.collapsed sınıf desteği bulunur[cite: 2].
+* Ana içerik alanı (#main) sol menü durumuna göre esnek marjin yönetimine sahiptir[cite: 2].
+* Üstbilgi alanı (#topbar) başlık, model etiketi ve araçları barındırır[cite: 2].
+* Canlı durum çubuğu (#statusBar) Ollama ve Gemini haplarını gösterir[cite: 2].
+* Mesaj baloncukları için fadeInUp animasyon keyframe tanımı yer alır[cite: 2].
+* Mesaj hizalama sınıfları (.msg-wrapper.user, .assistant, .system) ayrıştırılmıştır[cite: 2].
+* Model rozetleri için yerel, bulut, araştırma ve skill renk sınıflandırmaları bulunur[cite: 2].
+* Bekleme durumları için döner kum saati animasyonu (spin-hourglass) entegre edilmiştir[cite: 2].
+* Tamamlanan yanıtlar için yanıp sönme efekti (blink-effect) tanımlanmıştır[cite: 2].
+* Küçük ekranlar (700px altı) için duyarlı medya sorguları (media query) yer alır[cite: 2].
+
+6. Kullanıcı Deneyimi ve Etkileşim Araçları Gereksinimleri
+* Yeni sohbet başlatma düğmesi (#newChatBtn) arayüzde yer alır[cite: 2].
+* Model seçim dropdown menüsü (#modelSelect) kategorize edilmiş optgroup yapılarıyla doldurulur[cite: 2].
+* Sohbet geçmişini .txt formatında indirme düğmesi (#downloadChatBtn) aktiftir[cite: 2].
+* Geçmiş sohbet liste öğeleri (.hist-item) aktif, bekleme ve yeni yanıt durum sınıflarını destekler[cite: 2].
+* Geçmiş sohbetleri silme (del) işlevi bulunur[cite: 2].
+* Tema değiştirme düğmesi (#themeToggle) koyu, loş ve açık temalar arasında döngü sağlar[cite: 2].
+* Uygulamayı ve arka plan Ollama süreçlerini tamamen sonlandıran çıkış düğmesi (#shutdownBtn) yer alır[cite: 2].
+* Ferah metin giriş alanı (#prompt) minimum 140px yükseklik ve özel çerçeve tasarımıyla sunulur[cite: 2].
+* Panodan (Ctrl+V) doğrudan resim yapıştırma ve önizleme oluşturma özelliği aktiftir[cite: 2].
+* Çoklu görsel ekleme, önizleme ve silme (remove-img) mekanizmaları bulunur[cite: 2].
+* Excel dönüştürme aracı (excelBtn) ve PDF yükleme aracı (pdfBtn) arayüzde erişilebilirdir[cite: 2].
+* TXT dosyalarını doğrudan metin alanına paketleyen dosya yükleme input alanı yer alır[cite: 2].
+* Asistan yanıt balonlarının altında mini kopyalama ve indirme butonları (msg-actions) bulunur[cite: 2].
+* AbortController altyapısı ile devam eden üretimi anında durduran kırmızı durdur butonu (btn-stop) aktiftir[cite: 2].
+* Sol menü kartlarında güncelleme anında parlatma animasyonları (histBlink, newReplyPulse) çalışır[cite: 2].
+* IIFE kapsüllenmiş güvenli JavaScript mimarisi ('use strict') kullanılır[cite: 2].
+* Oturum verileri localStorage üzerinde kalıcı olarak saklanır[cite: 2].
+* Türkçe tarih ve saat formatında damga üreten getFormattedTimestamp() fonksiyonu aktiftir[cite: 2].
+* Model türlerini ayırt eden modelKind() ve modelIcon() yardımcı fonksiyonları bulunur[cite: 2].
+* Yanıt sürelerini hesaplayan performans istatistik yükleyicisi (loadModelStats) entegre edilmiştir[cite: 2].
+* Otomatik başlık üreteci (generateTitle) ilk kullanıcı mesajına göre sohbet adını belirler[cite: 2].
+* Sohbet akışını gerçek zamanlı güncelleyen updateStreamingBubble() fonksiyonu bulunur[cite: 2].
+* Mesaj listesini yeniden çizen renderChat() ana motoru aktiftir[cite: 2].
+* Gönder butonunun durumunu dinamik değiştiren updateSendButtonState() fonksiyonu yer alır[cite: 2].
+* Uzmanlık rolleri (SYSTEM_ROLES) genel, yazılım mimarı, teknik yazar, veri analisti ve mühendis modlarını barındırır[cite: 2].
+* Mini butonları dinamik olarak enjekte eden attachMiniButtons() fonksiyonu çalışır[cite: 2].
+* Global durdurma denetleyicisi globalAbortController süreci yönetir[cite: 2].
+* Sayfa kapanırken veya yenilenirken güvenli çıkış kontrolleri sağlanır[cite: 2].
+* Responsive sidebar açma/kapama işlevi sidebarToggle ile tetiklenir[cite: 2].
+* Model hız etiketlerini gösteren speedLabel() fonksiyonu bulunur[cite: 2].
+* Geçmiş sohbetleri model adına göre bulan findConvByModel() mantığı aktiftir[cite: 2].
+* Görsel ağırlıklı modelleri tespiti için isVisionOnlyModel() kontrolü yer alır[cite: 2].
+* Sohbet geçmişini modele uygun formatta kırpan buildHistoryForModel() fonksiyonu çalışır[cite: 2].
+* Base64 veri dönüşümleri için toBase64() yardımcı okuyucusu bulunur[cite: 2].
